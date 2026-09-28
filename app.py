@@ -1,4 +1,5 @@
 import json
+import os
 from google import genai
 from google.genai import types
 import streamlit as st
@@ -8,11 +9,37 @@ from twilio.rest import Client as TwilioClient
 from prompts import SYSTEM_PROMPT, WELCOME_MESSAGE_TEMPLATE, SUMMARY_REQUEST_PROMPT
 
 
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-TWILIO_ACCOUNT_SID = st.secrets["TWILIO_ACCOUNT_SID"]
-TWILIO_AUTH_TOKEN = st.secrets["TWILIO_AUTH_TOKEN"]
-TWILIO_WHATSAPP_FROM = st.secrets["TWILIO_WHATSAPP_FROM"]
-TWILIO_CONTENT_SID = st.secrets["TWILIO_CONTENT_SID"]
+REQUIRED_SECRETS = (
+    "GEMINI_API_KEY",
+    "TWILIO_ACCOUNT_SID",
+    "TWILIO_AUTH_TOKEN",
+    "TWILIO_WHATSAPP_FROM",
+    "TWILIO_CONTENT_SID",
+)
+
+
+def load_secret(name):
+    value = st.secrets.get(name) or os.getenv(name)
+    if not value:
+        return None
+    return value
+
+
+missing_secrets = [name for name in REQUIRED_SECRETS if not load_secret(name)]
+if missing_secrets:
+    st.error(
+        "Missing deployment secrets: "
+        + ", ".join(missing_secrets)
+        + ". Add them in Streamlit Cloud under App settings > Secrets."
+    )
+    st.stop()
+
+
+GEMINI_API_KEY = load_secret("GEMINI_API_KEY")
+TWILIO_ACCOUNT_SID = load_secret("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = load_secret("TWILIO_AUTH_TOKEN")
+TWILIO_WHATSAPP_FROM = load_secret("TWILIO_WHATSAPP_FROM")
+TWILIO_CONTENT_SID = load_secret("TWILIO_CONTENT_SID")
 
 
 @st.cache_resource
